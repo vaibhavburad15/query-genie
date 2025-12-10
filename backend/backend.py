@@ -64,7 +64,7 @@ app = FastAPI()
 # --- CORS Middleware ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://localhost:8081"],
+    allow_origins=["https://queryfrontend-one.vercel.app/","http://localhost:8080", "http://localhost:8081"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -437,3 +437,4 @@ async def delete_chat_session(session_id: int = Path(..., description="The ID of
         raise HTTPException(status_code=500, detail=f"Failed to delete chat session: {str(e)}")
     finally:
         db_session.close()
+
