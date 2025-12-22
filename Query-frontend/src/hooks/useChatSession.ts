@@ -15,12 +15,7 @@ export function useChatSession() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (justLoggedIn) {
-      createNewChat();
-      resetJustLoggedIn();
-    }
-  }, [justLoggedIn]);
+
 
   useEffect(() => {
     if (currentChatId !== null) {
@@ -96,6 +91,15 @@ export function useChatSession() {
       console.error("Error deleting chat session", error);
     }
   };
+const renameCurrentChat = (title: string) => {
+  setChatSessions((prev) =>
+    prev.map((chat) =>
+      chat.id === currentChatId
+        ? { ...chat, title }
+        : chat
+    )
+  );
+};
 
   return {
     chatSessions,
@@ -105,5 +109,6 @@ export function useChatSession() {
     selectChat,
     deleteChat,
     setMessages,
+    renameCurrentChat,
   };
 }

@@ -6,8 +6,6 @@ import EnhancedDataTable from './EnhancedDataTable';
 import queryGenieLogo from '@/assets/query-genie-logo.png';
 
 // Helper function to parse SQL output string to structured data
-const [confirmationHandled, setConfirmationHandled] = useState(false);
-
 function parseSqlOutput(output: string): {
   type: 'select' | 'status' | 'error' | 'confirmation_required';
   data?: string[][];
@@ -130,48 +128,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onConfirmSql,
   onCancelSql,
 }) => {
+       const [sqlVisibility, setSqlVisibility] = useState<Record<string, boolean>>({});
+       const [confirmationHandled, setConfirmationHandled] = useState(false);
+       console.log('Rendering ChatWindow with messages:', messages);
 
-  console.log('Rendering ChatWindow with messages:', messages);
-
-  const [sqlVisibility, setSqlVisibility] = useState<Record<string, boolean>>({});
-const handleConfirmSql = async (sql: string) => {
-  try {
-    const res = await fetch("http://localhost:8000/api/confirm-sql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: 1, // TODO: replace with real user id
-        confirm: true,
-        sql
-      })
-    });
-
-    const result = await res.json();
-
-    // Push backend response as assistant message
-    messages.push({
-      id: crypto.randomUUID(),
-      type: "assistant",
-      role: "ai",
-      content: `SQL: \`${sql}\`\nOutput: ${JSON.stringify(result)}`
-    });
-  } catch (err) {
-    messages.push({
-      id: crypto.randomUUID(),
-      type: "error",
-      content: "Failed to execute SQL"
-    });
-  }
-};
-
-const handleCancelSql = () => {
-  messages.push({
-    id: crypto.randomUUID(),
-    type: "assistant",
-    role: "ai",
-    content: "❌ SQL execution cancelled by user."
-  });
-};
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
@@ -229,7 +189,12 @@ const handleCancelSql = () => {
               const sqlMatch = message.content.match(/SQL:\s*[`']([^`']+)[`']/);
               const parsedOutput = parseSqlOutput(message.content);
               // 🟡 CONFIRMATION REQUIRED TABLE
-if (parsedOutput?.type === 'confirmation_required' && parsedOutput.table) {
+if (
+  parsedOutput?.type === 'confirmation_required' &&
+  parsedOutput.table &&
+  !confirmationHandled
+) {
+
   return (
     <div key={message.id} className="space-y-4">
       
@@ -258,16 +223,25 @@ if (parsedOutput?.type === 'confirmation_required' && parsedOutput.table) {
       {/* Confirm / Cancel buttons */}
       <div className="flex gap-3">
         <Button
-           variant="destructive"
-            onClick={() => onConfirmSql(parsedOutput.sql!)}>
-            Confirm & Execute
-             </Button>
+  variant="destructive"
+  onClick={() => {
+    setConfirmationHandled(true);
+    onConfirmSql(parsedOutput.sql!);
+  }}
+>
+  Confirm & Execute
+</Button>
 
-            <Button
-              variant="outline"
-              onClick={onCancelSql}>
-               Cancel
-               </Button>
+<Button
+  variant="outline"
+  onClick={() => {
+    setConfirmationHandled(true);
+    onCancelSql();
+  }}
+>
+  Cancel
+</Button>
+
 
 
       </div>

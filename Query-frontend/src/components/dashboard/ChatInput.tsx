@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Send, Loader2 } from 'lucide-react';
 import { sendChatMessage, ChatRequestPayload } from '@/services/api';
+import { useChatSession } from '@/hooks/useChatSession';
+
 
 // Define the shape of a chat message
 export interface ChatMessage {
@@ -22,7 +24,13 @@ interface ChatInputProps {
 }
 
 const ChatInput = ({ chatHistory, setChatHistory, isLoading, setIsLoading, isConnected }: ChatInputProps) => {
+  const { renameCurrentChat } = useChatSession();
   const [message, setMessage] = useState('');
+  const isFirstUserMessage = chatHistory.filter(
+  (msg) => msg.role === "user"
+   ).length === 0;
+
+  console.log("Is first user message:", isFirstUserMessage);
   const API_BASE = "http://localhost:8000";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +38,17 @@ const ChatInput = ({ chatHistory, setChatHistory, isLoading, setIsLoading, isCon
   if (!message.trim() || isLoading || !isConnected) return;
 
   const userMessage: ChatMessage = { role: 'user', content: message };
+  // ✅ STEP 4: Set chat title from first user message
+// ✅ STEP 4: Rename chat from first user message
+if (isFirstUserMessage) {
+  const title =
+    message.length > 40
+      ? message.slice(0, 40) + "..."
+      : message;
 
-  setChatHistory(prevHistory => [...prevHistory, userMessage]);
+  renameCurrentChat(title);
+}
+setChatHistory(prev => [...prev, userMessage]);
   setIsLoading(true);
   setMessage('');
 
@@ -64,12 +81,18 @@ const ChatInput = ({ chatHistory, setChatHistory, isLoading, setIsLoading, isCon
 };
 
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as any);
-    }
-  };
+ const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  if (e.key === "Enter" && e.shiftKey) {
+    // allow new line
+    return;
+  }
+
+  if (e.key === "Enter" && !e.shiftKey) {
+    // prevent new line, let form submit handle it
+    e.preventDefault();
+  }
+};
+
 
   return (
     <div className="bg-#010514-800 p-4">

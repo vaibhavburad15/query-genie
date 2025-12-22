@@ -25,8 +25,10 @@ const DashboardPage = () => {
   const [isConnected, setIsConnected] = React.useState(false);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const handleConnectSuccess = () => {
+  const handleConnectSuccess = async () => {
     setIsConnected(true);
+    await createNewChat();
+
   };
 
   const handleOpenModal = () => {
@@ -34,26 +36,37 @@ const DashboardPage = () => {
   };
 
   const handleNewChat = async () => {
-    try {
-      await createNewChat();
-      toast({
-        title: "New Chat Started",
-        description: "Ask a question to begin.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error creating new chat",
-        description: "Could not create new chat session. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  if (!isConnected) {
+    toast({
+      title: "Database not connected",
+      description: "Please connect to a database first.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    await createNewChat();
+    toast({
+      title: "New Chat Started",
+      description: "Ask a question to begin.",
+    });
+  } catch (error) {
+    toast({
+      title: "Error creating new chat",
+      description: "Could not create new chat session. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const handleChatSelect = (chatId: number) => {
     selectChat(chatId);
   };
 
   const handleDeleteChat = async (chatId: number) => {
+    
     try {
       await deleteChat(chatId);
       toast({
@@ -91,7 +104,7 @@ const handleConfirmSql = async (sql: string) => {
       {
         role: "assistant",
         type: "assistant",
-        content: `SQL: \`${sql}\`\nOutput: ${JSON.stringify(result)}`,
+        content: result.message || "SQL executed successfully",
         timestamp: new Date().toISOString(),
       },
     ]);
@@ -144,14 +157,15 @@ const handleCancelSql = () => {
           </header>
 
           <ChatWindow
-           messages={messages.map((msg, idx) => ({  ...msg,
-           id: (msg as any).id ?? String(idx),
+           messages={messages.map((msg, idx) => ({  
+            ...msg,
+            id: (msg as any).id ?? String(idx),
             type: (msg as any).type ?? (msg.role === 'user' ? 'user' : 'assistant'),
             timestamp: (msg as any).timestamp ?? new Date().toISOString(),
             }))}
             onConnectDatabase={handleOpenModal}
-           onConfirmSql={handleConfirmSql}
-           onCancelSql={handleCancelSql}/>
+            onConfirmSql={handleConfirmSql}
+            onCancelSql={handleCancelSql}/>
 
 
           <ChatInput
